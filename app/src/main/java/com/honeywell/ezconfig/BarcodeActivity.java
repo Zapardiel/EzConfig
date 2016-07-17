@@ -2,14 +2,16 @@ package com.honeywell.ezconfig;
 
 
 import android.bluetooth.BluetoothAdapter;
+import android.content.ContentResolver;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.provider.Settings.System;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 
 import com.google.zxing.BarcodeFormat;
@@ -29,41 +31,55 @@ public class BarcodeActivity extends AppCompatActivity {
 
     private static final String TAG = BarcodeActivity.class.getSimpleName();
 
+    //Content resolver used as a handle to the system's settings
+    private ContentResolver cResolver;
+    //Window object, that will store a reference to the current window
+    private Window window;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        LinearLayout l = new LinearLayout(this);
-        l.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
-        l.setOrientation(LinearLayout.VERTICAL);
-
-        setContentView(l);
+        setContentView(R.layout.activity_barcode);
 
         // barcode data
         String barcode_data = "BT_DNG6;BT_ADDR" + getBluetoothMacAddress() + "." + Byte.toString((byte) 0x80);
 
         // barcode image
         Bitmap bitmap = null;
-        ImageView iv = new ImageView(this);
+        //ImageView iv = new ImageView(this);
+        ImageView imageV = (ImageView) findViewById(R.id.imageView2);
 
         try {
 
-            bitmap = encodeAsBitmap(barcode_data, BarcodeFormat.QR_CODE, 600, 300);
-            iv.setImageBitmap(bitmap);
+            bitmap = encodeAsBitmap(barcode_data, BarcodeFormat.CODE_128, 1900, 600);
+            imageV.setImageBitmap(bitmap);
 
         } catch (WriterException e) {
             e.printStackTrace();
         }
 
-        l.addView(iv);
-
-        //barcode text
+        // Barcode
         TextView tv = new TextView(this);
         tv.setGravity(Gravity.CENTER_HORIZONTAL);
         tv.setText(barcode_data);
 
-        l.addView(tv);
 
+        // Set System Brightness to max (=255)
+
+           //Get the content resolver
+            cResolver = getContentResolver();
+            //Get the current window
+            window = getWindow();
+
+            //Set the system brightness using the brightness variable value
+            System.putInt(cResolver, System.SCREEN_BRIGHTNESS, 255);
+            //Get the current window attributes
+            WindowManager.LayoutParams layoutpars = window.getAttributes();
+            //Set the brightness of this window
+            layoutpars.screenBrightness = 255;
+            //Apply attribute changes to this window
+            window.setAttributes(layoutpars);
     }
 
     /**************************************************************
